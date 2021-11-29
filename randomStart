@@ -1,0 +1,166 @@
+import numpy as np
+from random import random
+import pygame
+
+
+"""
+Variables needed:
+current pos
+Size of car
+current speed
+current acc
+max speed
+max acceleration (not necessarily symmetric)
+reaction time
+Chicken factor? (don't like people behind you, don't like being close, or want to get as close as possible)
+
+functions
+setters
+getters
+update v, a, etc.
+checks
+check of crash
+check of distance in front
+"""
+
+# Setting basic variables
+background_color = "black"
+
+track_radius = 250 # Radius to the center of the track
+
+
+# Screen size generated with pygame
+screen_width = 750
+screen_height = 750
+(width, height) = (screen_width, screen_height)
+
+# Infinite loop variable that'll be used later when actually running the simulation
+running = True
+
+# Can make this class its own file, improves readability of the code
+class Car:
+    def __init__(self, number, x0, y0, v0, a0, angle0, car_size, max_speed, max_neg_acc, max_pos_acc, car_color):
+        self.number = number
+        self.x = x0
+        self.y = y0
+        self.v = v0
+        self.a = a0
+        self.size = car_size
+        self.max_speed = max_speed
+        self.max_neg_acc = max_neg_acc
+        self.max_pos_acc = max_pos_acc
+        self.color = car_color
+        self.angle = angle0
+
+    def get_xpos(self):
+        return self.x
+
+    def get_velo(self):
+        return self.v
+    
+    def get_acc(self):
+        return self.a
+
+    def get_size(self):
+        return self.size
+
+    def get_angle(self):
+        return self.angle
+
+    def print_summary(self):
+        # Originally used when I had a 1D simulation, not corrected for a circular track
+        print(f"Car #{self.number}, size {self.size}, is at x = {self.x} m and y = {self.y} m with a speed of {self.v} m/s and an acceleration of {self.a} m/s^2.")
+
+    def draw_car(self):
+        pygame.draw.circle(screen, self.color, (self.x, self.y), self.size)
+
+    def move(self):
+        """
+        Should put all of this functionality elsewhere instead of a method in the class
+        """
+        if self.v + self.a*np.pi/180 < self.max_speed:
+            self.v += self.a*np.pi/180
+        else:
+            self.v = self.max_speed
+        
+        self.angle += self.v*np.pi/180
+
+
+        # Will convert this to % for update 2 
+        #if self.angle >= 2*np.pi:
+            #self.angle -= 2*np.pi
+
+        self.x = np.cos(self.angle)*track_radius + screen_width/2
+        self.y = np.sin(self.angle)*track_radius + screen_height/2
+
+
+# Function to draw track that'll be called every loop
+def draw_track():
+    pygame.draw.circle(screen, "gray", (screen_width/2, screen_height/2), 300)
+    pygame.draw.circle(screen, "black", (screen_width/2, screen_height/2), 200)
+
+
+
+number_of_cars = 5
+my_cars = []
+
+color_list = ["blue", "red", "green", "purple", "white"]
+prevAngle = 0
+# Generating all of the cars
+for n in range(number_of_cars):
+    possible_angle = (2*np.pi/number_of_cars)
+    dtheta = random()*possible_angle + .3
+    starting_angle = prevAngle + dtheta
+    starting_x = np.cos(starting_angle)*track_radius + screen_width/2
+    starting_y = np.sin(starting_angle)*track_radius + screen_height/2
+    car = Car(n, starting_x, starting_y, 0.5, 2, starting_angle, 20, 40, -20, 10, color_list[n])
+    my_cars.append(car)
+    prevAngle = starting_angle
+
+# Setting up the pygame window
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Traffic Simulation")
+screen.fill(background_color)
+
+# Drawing the initial position
+draw_track()
+
+for car in my_cars:
+    car.draw_car()
+
+pygame.display.flip()
+
+
+
+# Running the simulation
+while running:
+    for event in pygame.event.get():
+        # Allows the code to be quit
+        if event.type == pygame.QUIT:
+            running = False
+        
+        # Keyboard presses advance the simulation
+        elif event.type == pygame.KEYDOWN:
+
+            screen.fill(background_color)
+            draw_track()
+
+            for car in my_cars:
+                car.move()
+                car.draw_car()
+            
+            pygame.display.flip()
+
+
+
+"""
+Update 2 Todo
+
+Share Code on Canvas
+Print statistics in the corner
+num cars, av speed of cars, how many time ticks since start
+
+Initialized at random spots
+
+Double linked list (look this up)
+"""
